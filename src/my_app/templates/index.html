@@ -13,12 +13,11 @@
             </div>
             {% endfor %}
             
-            <div class = "col text-center">
+            <div class="col text-center">
                 <input type="submit" class="btn btn-primary" value="Create Friend" />
             </div>
-
         </div>
-    <form>
+    </form>
 </div>
 
 <hr />
@@ -32,102 +31,102 @@
                 <th>Last name</th>
                 <th>Likes</th>
                 <th>DOB</th>
-                <th>lives in</th>
+                <th>Lives in</th>
             </tr>
         </thead>
         <tbody>
         {% for friend in friends %}
         <tr>
-            <td>{{friend.nick_name}}</td>
-            <td>{{friend.first_name}}</td>
-            <td>{{friend.last_name}}</td>
-            <td>{{friend.likes}}</td>
-            <td>{{friend.dob | date:"Y-m-d"}}</td>
-            <td>{{friend.lives_in}}</td>
+            <td>{{ friend.nick_name }}</td>
+            <td>{{ friend.first_name }}</td>
+            <td>{{ friend.last_name }}</td>
+            <td>{{ friend.likes }}</td>
+            <td>{{ friend.dob | date:"Y-m-d" }}</td>
+            <td>{{ friend.lives_in }}</td>
         </tr>
         {% endfor %}
         </tbody>
     </table>
-
 </div>
-{% endblock content %}
 
+{% endblock content %}
 
 {% block javascript %}
 <script>
     $(document).ready(function () {
         /*
-            On submiting the form, send the POST ajax
-            request to server and after successfull submission
+            On submitting the form, send the POST AJAX
+            request to server and after successful submission
             display the object.
         */
-        $("#friend-form").submit(function (e) {
-            // preventing from page reload and default actions
+        $("#friend-form").submit(async function (e) {
+            // Preventing from page reload and default actions
             e.preventDefault();
-            // serialize the data for sending the form data.
+            // Serialize the data for sending the form data.
             var serializedData = $(this).serialize();
-            console.log(serializedData)
-            // make POST ajax call
-            $.ajax({
-                type: 'POST',
-                url: "{% url 'post_friend' %}",
-                data: serializedData,
-                success: function (response) {
-                    // on successfull creating object
-                    // 1. clear the form.
-                    $("#friend-form").trigger('reset');
-                    // 2. focus to nickname input 
-                    $("#id_nick_name").focus();
+            console.log(serializedData);
+            
+            try {
+                // Make POST AJAX call
+                const response = await $.ajax({
+                    type: 'POST',
+                    url: "{% url 'post_friend' %}",
+                    data: serializedData
+                });
+                
+                // On successful creation of object
+                // 1. Clear the form.
+                $("#friend-form").trigger('reset');
+                // 2. Focus to nickname input 
+                $("#id_nick_name").focus();
 
-                    // display the newly friend to table.
-                    var instance = JSON.parse(response["instance"]);
-                    var fields = instance[0]["fields"];
-                    $("#my_friends tbody").prepend(
-                        `<tr>
-                        <td>${fields["nick_name"]||""}</td>
-                        <td>${fields["first_name"]||""}</td>
-                        <td>${fields["last_name"]||""}</td>
-                        <td>${fields["likes"]||""}</td>
-                        <td>${fields["dob"]||""}</td>
-                        <td>${fields["lives_in"]||""}</td>
-                        </tr>`
-                    )
-                },
-                error: function (response) {
-                    // alert the error if any error occured
-                    alert(response["responseJSON"]["error"]);
-                }
-            })
-        })
+                // Display the newly friend in the table.
+                var instance = JSON.parse(response["instance"]);
+                var fields = instance[0]["fields"];
+                $("#my_friends tbody").prepend(
+                    `<tr>
+                    <td>${fields["nick_name"] || ""}</td>
+                    <td>${fields["first_name"] || ""}</td>
+                    <td>${fields["last_name"] || ""}</td>
+                    <td>${fields["likes"] || ""}</td>
+                    <td>${fields["dob"] || ""}</td>
+                    <td>${fields["lives_in"] || ""}</td>
+                    </tr>`
+                );
+            } catch (error) {
+                // Alert the error if any error occurred
+                alert(error.responseJSON ? error.responseJSON.error : 'An error occurred.');
+            }
+        });
 
         /*
         On focus out on input nickname,
         call AJAX get request to check if the nickName
         already exists or not.
         */
-        $("#id_nick_name").focusout(function (e) {
+        $("#id_nick_name").focusout(async function (e) {
             e.preventDefault();
-            // get the nickname
+            // Get the nickname
             var nick_name = $(this).val();
             // GET AJAX request
-            $.ajax({
-                type: 'GET',
-                url: "{% url 'validate_nickname' %}",
-                data: {"nick_name": nick_name},
-                success: function (response) {
-                    // if not valid user, alert the user
-                    if(!response["valid"]){
-                        alert("You cannot create a friend with same nick name");
-                        var nickName = $("#id_nick_name");
-                        nickName.val("")
-                        nickName.focus()
-                    }
-                },
-                error: function (response) {
-                    console.log(response)
+            try {
+                const response = await $.ajax({
+                    type: 'GET',
+                    url: "{% url 'validate_nickname' %}",
+                    data: { "nick_name": nick_name }
+                });
+                
+                // If not valid user, alert the user
+                if (!response["valid"]) {
+                    alert("You cannot create a friend with the same nickname");
+                    var nickName = $("#id_nick_name");
+                    nickName.val("");
+                    nickName.focus();
                 }
-            })
-        })
-    })
+            } catch (error) {
+                console.log(error);
+            }
+        });
+    });
 </script>
 {% endblock javascript %}
